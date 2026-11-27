@@ -2,6 +2,11 @@
 
 CaDi is a free, open-source tool that helps you check and harden computers you manage. Use it to see what’s exposed, decide what to change, and verify that the change worked.
 
+## Download or build
+
+- Get the available platform ZIPs and their verification notes on [Releases](https://github.com/c3829a473-demuziq/cadi/releases).
+- [Download the 1.0.2 source archive](CaDi-1.0.2-Source.zip) for rebuild instructions, the quick start, and the source code.
+
 ## What it can do
 
 - Show which services are listening for connections, what’s running, and which security settings are worth reviewing.
@@ -16,10 +21,6 @@ CaDi is a free, open-source tool that helps you check and harden computers you m
 
 For help interpreting a report, open **Connector**. You can sign in with ChatGPT or connect using your own API key. Preview the report before sending it.
 
-## Release status
-
-The first public build is in preparation. Source code, downloads, and build instructions will be added with the release.
-
 ## License
 
-CaDi’s own code will be released under the [MIT License](LICENSE). Third-party components retain their own licenses.
+CaDi’s own code is available under the [MIT License](LICENSE). Third-party components retain their own licenses.
