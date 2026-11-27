@@ -1,0 +1,74 @@
+name: CaDi 1.0.2 Intel Mac preview
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/cadi-mac-1.0.2.yml']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cadi-mac-1-0-2
+
+jobs:
+  mac-preview:
+    if: github.ref == 'refs/heads/main'
+    runs-on: macos-15-intel
+    timeout-minutes: 20
+    steps:
+      - name: Check out the approved source snapshot
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Verify source and prepare Rust
+        run: |
+          test "$(uname -m)" = x86_64
+          echo '7b8f09cc1ec842f8de5b8ea86d0f95b25934316571bb8a801cb9c116c1629928  CaDi-1.0.2-Source.zip' | shasum -a 256 -c -
+          unzip -q CaDi-1.0.2-Source.zip
+          rustup toolchain install 1.95.0 --profile minimal --target x86_64-apple-darwin
+      - name: Build and verify the signed Intel app
+        working-directory: CaDi-1.0.2
+        env:
+          RUSTUP_TOOLCHAIN: 1.95.0
+          CARGO_INCREMENTAL: '0'
+        run: |
+          python3 -B tools/build_mac.py --output "$RUNNER_TEMP/CaDi-1.0.2-Mac-Intel.zip"
+          unzip -tq "$RUNNER_TEMP/CaDi-1.0.2-Mac-Intel.zip"
+          mkdir "$RUNNER_TEMP/cadi-verify"
+          ditto -x -k "$RUNNER_TEMP/CaDi-1.0.2-Mac-Intel.zip" "$RUNNER_TEMP/cadi-verify"
+          app="$RUNNER_TEMP/cadi-verify/CaDi v1.app"
+          codesign --verify --deep --strict "$app"
+          test "$(lipo -archs "$app/Contents/MacOS/CaDi")" = x86_64
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Contents/Info.plist")" = 1.0.2
+          res="$app/Contents/Resources"
+          "$res/runtime/bin/python3.12" -I -B "$res/cadi_guard.py" --version | grep -F '1.0.2'
+          "$res/runtime/bin/python3.12" -I -B "$res/cadi_guard.py" audit --json > "$RUNNER_TEMP/cadi-audit.json"
+          python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); assert r["version"]=="1.0.2" and isinstance(r["findings"],list)' "$RUNNER_TEMP/cadi-audit.json"
+          for op in cleanup remove tunnel; do
+            if "$res/runtime/bin/python3.12" -I -B "$res/cadi_guard.py" "$op" >/dev/null 2>&1; then
+              echo 'A removed command was still available.'; exit 1
+            fi
+          done
+          shasum -a 256 "$RUNNER_TEMP/CaDi-1.0.2-Mac-Intel.zip"
+      - name: Publish the Intel Mac prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          asset="$RUNNER_TEMP/CaDi-1.0.2-Mac-Intel.zip"
+          digest=$(shasum -a 256 "$asset" | cut -d ' ' -f 1)
+          if gh release view v1.0.2-mac-preview --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo 'The preview already exists; not replacing it.'; exit 1
+          fi
+          cat > "$RUNNER_TEMP/cadi-notes.md" <<EOF
+          Intel Mac preview of CaDi 1.0.2. App Cleanup and Tailscale-specific checks have been removed from CaDi. This does not uninstall or change Tailscale.
+
+          Download **CaDi-1.0.2-Mac-Intel.zip**, unzip it, and open **CaDi v1.app** from Finder. Start with a read-only scan. The app is ad-hoc signed, not notarized by Apple, and macOS may block first launch.
+
+          **Verified:** built on an Intel macOS 15 runner; the unpacked app passed signature and architecture checks and its bundled engine ran a read-only audit. Finder launch, Ventura runtime, administrator prompts, Keychain, and firewall changes are not verified by this run.
+
+          **SHA-256:** $digest
+
+          The matching MIT-licensed source archive, including rebuild instructions, is included with this release.
+          EOF
+          gh release create v1.0.2-mac-preview "$asset" CaDi-1.0.2-Source.zip --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title 'CaDi 1.0.2 Intel Mac Preview' --notes-file "$RUNNER_TEMP/cadi-notes.md"
