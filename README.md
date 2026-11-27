@@ -1,19 +1,25 @@
 # CaDi
 
-CaDi is a local-first tool for auditing and hardening devices you administer. Start with a read-only scan, review what CaDi finds, and decide which changes to apply. Run the scan again to verify the result.
+CaDi is a free, open-source tool that helps you check and harden computers you manage. Use it to see what’s exposed, decide what to change, and verify that the change worked.
 
-- Review listening services, running processes, and selected security settings.
-- Get local alerts about newly observed remote-access connections without automatically disconnecting anyone.
+## What it can do
+
+- Show which services are listening for connections, what’s running, and which security settings are worth reviewing.
+- Alert you to newly observed remote-access connections without automatically disconnecting anyone.
 - Back up an individual file and restore a verified copy from that backup.
+
+## How to use it
+
+1. Run a read-only scan and review the findings.
+2. Preview the suggested changes and apply only the ones you want.
+3. Scan again to verify what changed. Turn on background alerts if you want ongoing monitoring.
+
+For help interpreting a report, open **Connector**. You can sign in with ChatGPT or connect using your own API key. Preview the report before sending it.
 
 ## Release status
 
-The first public build is in preparation. No source code or installable downloads have been published yet. The release will include install and uninstall steps, instructions for building from source, and a test report that distinguishes what passed from what remains unverified.
-
-## Privacy
-
-Basic scans and hardening work without ChatGPT or another AI account. The optional AI Connector is separate. If you choose a hosted provider, use your own account and review what you share before sending. The public release will not include credentials, account sessions, or chat history.
+The first public build is in preparation. Source code, downloads, and build instructions will be added with the release.
 
 ## License
 
-CaDi's own code will be released under the [MIT License](LICENSE). Third-party components retain their own licenses.
+CaDi’s own code will be released under the [MIT License](LICENSE). Third-party components retain their own licenses.
